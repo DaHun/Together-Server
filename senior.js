@@ -110,6 +110,64 @@ router.get('/volunteerinfo/load/one', function(req, res, next) {
 
 });
 
+//매칭된 상대 정보
+router.get('/matchinginfo/load', function(req, res, next){
+
+    var matching_id=req.query.matching_id;
+    var query='select * from MatchingInfo where matching_id = ?';
+    var value=[matching_id];
+
+    pool.getConnection(function(error, connection){
+       if(error){
+           console.log("getConnection Error : "+error);
+           res.sendStatus(500);
+       } else{
+           connection.query(query, value, function(error2, rows){
+              if(error){
+                  console.log("Connection Error : "+error2);
+                  res.sendStatus(500);
+                  connection.release();
+              } else{
+
+                  //사실 얘는 호출될 일 없음 클라에서 애초에 요청 안보냄
+                  if(rows.length==0){
+                      console.log('매칭정보없음');
+                      res.sendStatus(204);
+                      connection.release();
+                      return;
+                  }
+
+                  console.log('매칭정보있음');
+
+                  query='select * from User where user_id = ?';
+                  value=[rows[0].user_id];
+
+                  console.log("user_id : "+rows[0].user_id);
+                  connection.query(query, value, function (error3, rows2) {
+                      if(error3){
+                          console.log("Connection Error2 : "+error2);
+                          res.sendStatus(500);
+                          connection.release();
+                      }else{
+                          console.log("데이터 수 : "+rows2.length);
+                          console.log("user_id : "+rows2[0].user_id);
+                          console.log("name : "+rows2[0].name);
+                          console.log("age : "+rows2[0].age);
+                          console.log("phone : "+rows2[0].phone);
+
+
+                          res.send(rows2[0]);
+                          connection.release();
+                      }
+                  });
+
+              }
+           });
+       }
+    });
+});
+
+
 
 
 module.exports = router;
