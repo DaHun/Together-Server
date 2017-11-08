@@ -50,4 +50,35 @@ router.post('/volunteerinfo/register', function(req, res, next) {
 
 });
 
+//내가 등록한 모든 봉사정보
+router.get('/volunteerinfo/load/all', function(req, res, next) {
+
+
+    var user_id=req.query.user_id;
+
+    var query = 'select * from Matching where user_id = ?';
+    var value=[user_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('Select info'+'\n');
+                    res.status(200).send(rows);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
 module.exports = router;
