@@ -76,6 +76,110 @@ router.get('/volunteerinfo/load', function(req, res, next) {
 });
 
 
+//봉사자: 매칭하기
+router.put('/volunteerinfo/matching', function(req, res, next) {
+
+    var matching_id=req.query.matching_id;
+    var user_id=req.query.user_id;
+
+    var query = 'insert into MatchingInfo(matching_id, user_id) values(?,?);';
+    var value=[matching_id, user_id];
+
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+
+                    query = 'UPDATE Matching SET isMatched = 1 where matching_id = ?';
+                    value=[matching_id];
+
+
+                    connection.query(query, value, function(error2, rows2){
+                        if(error){
+                            console.log("connection error "+error);
+                            res.sendStatus(500);
+                            connection.release();
+                        }else{
+
+                            console.log("check update");
+
+                            //////
+                            query = 'select * from Matching where matching_id = ?';
+                            value=[matching_id];
+
+                            connection.query(query, value, function(error3, rows3){
+                                if(error){
+                                    console.log("Connection Error" + error3);
+                                    res.sendStatus(500);
+                                    connection.release();
+                                }
+                                else{
+
+                                    query = 'select * from User where user_id = ?';
+                                    value=[rows3[0].user_id];
+
+                                    connection.query(query, value, function(error4, rows4){
+                                        if(error){
+                                            console.log("Connection Error" + error4);
+                                            res.sendStatus(500);
+                                            connection.release();
+                                        }
+                                        else{
+
+
+                                            console.log('Matching Success : ');
+
+                                            //gcm
+                                            var pushMessage=new gcm.Message({
+                                                collapseKey: 'demo',
+                                                delayWhileIdle: true,
+                                                timeToLive: 3,
+
+                                                data:{
+                                                    title: 'Together',
+                                                    message: '매칭되었습니다'
+                                                }
+                                            });
+
+                                            var token=rows4[0].token;
+                                            registrationIds.push(token);
+
+                                            sender.send(pushMessage, registrationIds, 4, function(err, result){
+                                                console.log(result);
+                                            });
+                                            //
+
+                                            res.sendStatus(200);
+                                            connection.release();
+                                        }
+                                    });
+                                }
+                            });
+
+
+                            ///////
+
+                        }
+
+                    });
+
+                }
+            });
+        }
+    });
+
+});
+
+
 
 
 
