@@ -80,5 +80,36 @@ router.get('/volunteerinfo/load/all', function(req, res, next) {
 
 });
 
+//내가 등록한 특정 봉사정보
+router.get('/volunteerinfo/load/one', function(req, res, next) {
+
+
+    var matching_id=req.query.matching_id;
+
+    var query = 'select * from Matching where matching_id = ?';
+    var value=[matching_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('Select info'+'\n');
+                    res.status(200).send(rows[0]);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
 
 module.exports = router;
