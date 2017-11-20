@@ -62,7 +62,7 @@ router.post('/user/register', function(req, res, next) {
                     connection.release();
                 } else {
 
-                    query='select user_id from User where phone = ?';
+                    query='SELECT user_id FROM User WHERE phone = ? ORDER BY user_id DESC limit 1';
                     value=[phone];
                     connection.query(query,value,function(error2, rows2) {
                         if (error2) {

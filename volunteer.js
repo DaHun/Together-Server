@@ -183,5 +183,37 @@ router.put('/volunteerinfo/matching', function(req, res, next) {
 
 
 
+//봉사자: 자기가 매칭한 봉사 리스트 받아오기
+router.get('/volunteerinfo/mine', function(req, res, next) {
+
+    var user_id=req.query.user_id;
+
+    var query = "select * from Matching as tb1 INNER JOIN MatchingInfo as tb2 on tb1.matching_id = tb2.matching_id where tb2.user_id = ?";
+    var value=[user_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+
+                    console.log('GET my matchinglist  ');
+                    console.log(rows);
+                    res.status(200).send(rows);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
 
 module.exports = router;
