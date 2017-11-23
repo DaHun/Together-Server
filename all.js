@@ -8,7 +8,6 @@ var s3 = new aws.S3();
 var multer = require('multer');
 var multerS3 = require('multer-s3');
 
-
 var pool = mysql.createPool({
     host: db_config.host,
     port: db_config.port,
@@ -25,11 +24,10 @@ var upload = multer({
         bucket: 'togetherproject2',
         acl: 'public-read',
         key: function(req, file, cb) {
-            cb(null, Date.now() + '.' + file.originalname.split('.').pop());
+            cb(null, file.originalname);
         }
     })
 });
-
 
 
 // 유저 등록하기
@@ -84,6 +82,69 @@ router.post('/user/register', function(req, res, next) {
 
 });
 
+
+// SNS 글 등록
+router.post('/sns/newposting', upload.single('image'),function(req, res, next) {
+
+    var user_id=req.body.user_id;
+    var image_path=req.file.location;
+    var content=req.body.content;
+    var date=req.body.date;
+
+    console.log(user_id);
+    console.log(image_path);
+    console.log(content);
+    console.log(date);
+
+    var query = 'insert into SNS(user_id, image_path, content, date) values(?,?,?,?);';
+    var value=[user_id, image_path, content, date];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(501);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(502);
+                    connection.release();
+                } else {
+                    console.log('Insert SNS : '+'\n');
+                    res.sendStatus(200);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+// 모든 SNS
+router.get('/sns/load', function(req, res, next) {
+
+    var query = 'select * from SNS';
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('Select SNS : '+'\n');
+                    res.status(200).send(rows);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
 
 
 
