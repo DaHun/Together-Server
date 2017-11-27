@@ -120,10 +120,11 @@ router.post('/sns/newposting', upload.single('image'),function(req, res, next) {
 
 });
 
+
 // 모든 SNS
 router.get('/sns/load', function(req, res, next) {
 
-    var query = 'select * from SNS';
+    var query = 'select * from SNS ORDER BY post_id DESC';
 
     pool.getConnection(function(error, connection) {
         if (error) {
@@ -139,6 +140,114 @@ router.get('/sns/load', function(req, res, next) {
                     console.log('Select SNS : '+'\n');
                     res.status(200).send(rows);
                     connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
+// 내 SNS
+router.get('/sns/load/my', function(req, res, next) {
+
+    var user_id = req.query.user_id;
+
+    var query = 'select * from SNS where user_id = ? ORDER BY post_id DESC';
+    var value = [user_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('Select MY SNS : '+'\n');
+                    res.status(200).send(rows);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
+// comment 가져오기
+router.get('/comment/load', function(req, res, next) {
+
+    var post_id=req.query.post_id;
+
+    var query = 'select * from Comment where post_id = ?';
+    var value = [post_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('LOAD COMMENT : '+'\n');
+                    console.log(rows);
+                    res.status(200).send(rows);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
+// Comment 등록
+router.post('/comment/register', function(req, res, next) {
+
+    var post_id=req.body.post_id;
+    var content=req.body.content;
+    var date=req.body.date;
+    var user_id=req.body.user_id;
+
+
+    var query = 'insert into Comment(post_id,content, date, user_id) values(?,?,?,?);';
+    var value=[post_id,content, date , user_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(501);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(502);
+                    connection.release();
+                } else {
+
+                    query = 'select * from Comment where post_id = ?';
+                    value = [post_id];
+
+                    connection.query(query, value,function(error, rows) {
+                        if (error) {
+                            console.log("Connection Error" + error);
+                            res.sendStatus(500);
+                            connection.release();
+                        } else {
+                            console.log('Insert Comment : '+'\n');
+                            console.log(rows);
+                            res.status(200).send(rows);
+                            connection.release();
+                        }
+                    });
                 }
             });
         }
