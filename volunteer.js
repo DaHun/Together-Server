@@ -182,9 +182,8 @@ router.put('/volunteerinfo/matching', function(req, res, next) {
 
 
 
-
 //봉사자: 자기가 매칭한 봉사 리스트 받아오기
-router.get('/volunteerinfo/mine', function(req, res, next) {
+router.get('/volunteerinfo/mine/all', function(req, res, next) {
 
     var user_id=req.query.user_id;
 
@@ -206,6 +205,37 @@ router.get('/volunteerinfo/mine', function(req, res, next) {
                     console.log('GET my matchinglist  ');
                     console.log(rows);
                     res.status(200).send(rows);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
+//봉사자: 자기가 매칭한 봉사 리스트 받아오기
+router.get('/volunteerinfo/mine/one', function(req, res, next) {
+
+    var matching_id=req.query.matching_id;
+
+    var query = "select * from User as tb1 INNER JOIN Matching as tb2 on tb1.user_id = tb2.user_id where tb2.matching_id = ?";
+    var value=[matching_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('GET my matchinglist  ');
+                    console.log(rows);
+                    res.status(200).send(rows[0]);
                     connection.release();
                 }
             });

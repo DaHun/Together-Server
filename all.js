@@ -177,13 +177,85 @@ router.get('/sns/load/my', function(req, res, next) {
 
 });
 
+// SNS 삭제
+router.get('/sns/delete/my', function(req, res, next) {
+
+    var post_id = req.query.post_id;
+
+    var query = 'delete from SNS where post_id = ?';
+    var value = [post_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('DELETE MY SNS : '+'\n');
+                    res.sendStatus(200)
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
+// SNS 좋아요
+router.get('/sns/like', function(req, res, next) {
+
+    var post_id = req.query.post_id;
+
+    var query = 'SELECT * from SNS where post_id = ?';
+    var value = [post_id];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value, function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+
+                    query = 'UPDATE SNS SET like_count = ? where post_id = ?';
+                    value = [rows[0].like_count+1, post_id];
+
+                    connection.query(query, value, function(error, rows) {
+                        if (error) {
+                            console.log("Connection Error" + error);
+                            res.sendStatus(500);
+                            connection.release();
+                        } else {
+                            console.log('UPDATE likecount : '+'\n');
+                            res.sendStatus(200)
+                            connection.release();
+                        }
+                    });
+                }
+            });
+        }
+    });
+
+});
+
+
 
 // comment 가져오기
 router.get('/comment/load', function(req, res, next) {
 
     var post_id=req.query.post_id;
 
-    var query = 'select * from Comment where post_id = ?';
+    var query = "select tb1.post_id, tb1.content, tb1.date, tb2.name from Comment as tb1 INNER JOIN User as tb2 on tb1.user_id = tb2.user_id where tb1.post_id = ?";
     var value = [post_id];
 
     pool.getConnection(function(error, connection) {
