@@ -146,16 +146,19 @@ router.put('/volunteerinfo/matching', function(req, res, next) {
 
                                                 data:{
                                                     title: 'Together',
-                                                    message: '매칭되었습니다'
+                                                    message: '매칭되었습니다',
+                                                    matching_id: matching_id
                                                 }
                                             });
 
                                             var token=rows4[0].token;
+                                            console.log(token);
                                             registrationIds.push(token);
 
                                             sender.send(pushMessage, registrationIds, 4, function(err, result){
                                                 console.log(result);
                                             });
+                                            registrationIds.pop();
                                             //
 
                                             res.sendStatus(200);

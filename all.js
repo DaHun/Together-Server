@@ -124,7 +124,18 @@ router.post('/sns/newposting', upload.single('image'),function(req, res, next) {
 // 모든 SNS
 router.get('/sns/load', function(req, res, next) {
 
-    var query = 'select * from SNS ORDER BY post_id DESC';
+    var query = 'select ' +
+        'tb1.post_id, ' +
+        'tb1.user_id, ' +
+        'tb1.image_path, ' +
+        'tb1.content, ' +
+        'tb1.date, ' +
+        'tb1.like_count, ' +
+        'tb2.name ' +
+        'from SNS as tb1 ' +
+        'INNER JOIN User as tb2 ' +
+        'on tb1.user_id = tb2.user_id ' +
+        'ORDER BY post_id DESC';
 
     pool.getConnection(function(error, connection) {
         if (error) {
@@ -305,7 +316,11 @@ router.post('/comment/register', function(req, res, next) {
                     connection.release();
                 } else {
 
-                    query = 'select * from Comment where post_id = ?';
+                    query = "select tb1.post_id, tb1.content, tb1.date, tb2.name from Comment as tb1 " +
+                        "INNER JOIN User as tb2 " +
+                        "on tb1.user_id = tb2.user_id " +
+                        "where tb1.post_id = ?";
+
                     value = [post_id];
 
                     connection.query(query, value,function(error, rows) {
