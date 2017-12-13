@@ -146,7 +146,7 @@ router.put('/volunteerinfo/matching', function(req, res, next) {
 
                                                 data:{
                                                     title: 'Together',
-                                                    message: '매칭되었습니다',
+                                                    message: 'You are matched',
                                                     matching_id: matching_id
                                                 }
                                             });
@@ -239,6 +239,38 @@ router.get('/volunteerinfo/mine/one', function(req, res, next) {
                     console.log('GET my matchinglist  ');
                     console.log(rows);
                     res.status(200).send(rows[0]);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+//봉사자: 마스터 등록
+router.post('/register/master', function(req, res, next) {
+
+    var user_id=req.body.user_id;
+    var origin_lat=req.body.origin_lat;
+    var origin_long=req.body.origin_long;
+    var range=req.body.range;
+
+    var query = "insert into Master(user_id, origin_lat, origin_long, volunteer_range) values(?,?,?,?);";
+    var value=[user_id, origin_lat, origin_long, range];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('Register Master');
+                    res.sendStatus(200);
                     connection.release();
                 }
             });

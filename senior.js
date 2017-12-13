@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('mysql');
 var db_config = require('../config/db_config.json');
+var gcm=require('node-gcm');
 
 var pool = mysql.createPool({
     host: db_config.host,
@@ -12,6 +13,9 @@ var pool = mysql.createPool({
     connectionLimit: db_config.connectionLimit
 });
 
+var server=require('../config/push.json');
+var server_api_key=server.key;
+var sender=new gcm.Sender(server_api_key);
 
 // 봉사 등록하기
 router.post('/volunteerinfo/register', function(req, res, next) {
@@ -169,5 +173,79 @@ router.get('/matchinginfo/load', function(req, res, next){
 
 
 
+//반경내에 있는 마스터들에게 푸쉬알람
+router.get('/push/master', function(req, res, next) {
+
+    var latitude=req.query.latitude;
+    var longitude=req.query.longitude;
+
+
+    // var query =
+    //     "SELECT token, distance FROM("+
+    //     "SELECT tb2.token AS token, " +
+    //     "(6371*acos(cos(radians(?))*cos(radians(tb1.origin_lat))*cos(radians(tb1.origin_long)-radians(?))+sin(radians(?))*sin(radians(tb1.origin_lat)))) AS distance," +
+    //     "tb1.volunteer_range AS volunteer_range " +
+    //     "FROM Master as tb1 " +
+    //     "INNER JOIN User as tb2 " +
+    //     "on tb1.user_id = tb2.user_id " +
+    //     ") WHERE distance <= volunteer_range;";
+
+    var query =
+        "SELECT tb2.token, " +
+        "(6371*acos(cos(radians(?))*cos(radians(tb1.origin_lat))*cos(radians(tb1.origin_long)-radians(?))+sin(radians(?))*sin(radians(tb1.origin_lat)))) AS distance, " +
+        "tb1.volunteer_range " +
+        "FROM Master as tb1 " +
+        "INNER JOIN User as tb2 " +
+        "on tb1.user_id = tb2.user_id";
+
+    var value=[latitude, longitude, latitude];
+
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('Select Master'+'\n');
+
+                    var registrationIds=[];
+                    for(var i=0; i<rows.length;i++){
+                        if(rows[i].distance < rows[i].volunteer_range/1000){
+                            registrationIds.push(rows[i].token);
+                        }
+                    }
+                    //gcm
+                    var pushMessage=new gcm.Message({
+                        collapseKey: 'demo',
+                        delayWhileIdle: true,
+                        timeToLive: 3,
+
+                        data:{
+                            title: 'Together',
+                            message: 'Someone registers',
+                            matching_id: null
+                        }
+                    });
+
+                    sender.send(pushMessage, registrationIds, 4, function(err, result){
+                        console.log(result);
+                    });
+
+                    //console.log(typeof rows[0].distance);
+                    //console.log(typeof rows[0].volunteer_range);
+                    res.sendStatus(200);
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
 
 module.exports = router;
