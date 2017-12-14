@@ -280,5 +280,41 @@ router.post('/register/master', function(req, res, next) {
 });
 
 
+//봉사자: 마스터 확인(교회코드)
+router.get('/check/master', function(req, res, next) {
+
+    var code=req.query.code;
+
+    var query = "select * from Church where code = ?;";
+    var value=[code];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+                    console.log('Check Master');
+                    console.log(rows.length);
+
+                    if(rows.length == 0)
+                        res.sendStatus(404);
+                    else
+                        res.sendStatus(200);
+
+                    connection.release();
+                }
+            });
+        }
+    });
+
+});
+
+
 
 module.exports = router;

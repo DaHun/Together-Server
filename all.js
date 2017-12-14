@@ -29,9 +29,62 @@ var upload = multer({
     })
 });
 
+// 유저 등록하기: 사진있음
+router.post('/user/register', upload.single('image'), function(req, res, next) {
 
-// 유저 등록하기
-router.post('/user/register', function(req, res, next) {
+    var name=req.body.name;
+    var phone=req.body.phone;
+    var age=req.body.age;
+    var gender=req.body.gender;
+    var token=req.body.token;
+    var image_path=req.file.location;
+
+    console.log(name);
+    console.log(phone);
+    console.log(age);
+    console.log(gender);
+    console.log(token);
+
+    var query = 'insert into User(name, age, gender, phone, token, image_path) values(?,?,?,?,?,?);';
+    var value=[name, age, gender, phone, token, image_path];
+
+    pool.getConnection(function(error, connection) {
+        if (error) {
+            console.log("getConnection Error" + error);
+            res.sendStatus(500);
+        } else {
+            connection.query(query, value ,function(error, rows) {
+                if (error) {
+                    console.log("Connection Error" + error);
+                    res.sendStatus(500);
+                    connection.release();
+                } else {
+
+                    query='SELECT user_id FROM User WHERE phone = ? ORDER BY user_id DESC limit 1';
+                    value=[phone];
+                    connection.query(query,value,function(error2, rows2) {
+                        if (error2) {
+                            console.log("Connection Error" + error);
+                            res.sendStatus(500);
+                            connection.release();
+                        } else {
+                            console.log('Register User');
+                            console.log(Number(rows2[0].user_id));
+                            res.send(rows2[0]);
+                            connection.release();
+                        }
+                    });
+                    //
+                }
+            });
+        }
+    });
+
+});
+
+
+// 유저 등록하기:사진없음
+router.post('/user/register2', function(req, res, next) {
 
     var name=req.body.name;
     var phone=req.body.phone;
@@ -81,7 +134,6 @@ router.post('/user/register', function(req, res, next) {
     });
 
 });
-
 
 // SNS 글 등록
 router.post('/sns/newposting', upload.single('image'),function(req, res, next) {
@@ -266,7 +318,7 @@ router.get('/comment/load', function(req, res, next) {
 
     var post_id=req.query.post_id;
 
-    var query = "select tb1.post_id, tb1.content, tb1.date, tb2.name from Comment as tb1 INNER JOIN User as tb2 on tb1.user_id = tb2.user_id where tb1.post_id = ?";
+    var query = "select tb1.post_id, tb1.content, tb1.date, tb2.name, tb2.image_path from Comment as tb1 INNER JOIN User as tb2 on tb1.user_id = tb2.user_id where tb1.post_id = ? order by comment_id";
     var value = [post_id];
 
     pool.getConnection(function(error, connection) {
@@ -316,10 +368,10 @@ router.post('/comment/register', function(req, res, next) {
                     connection.release();
                 } else {
 
-                    query = "select tb1.post_id, tb1.content, tb1.date, tb2.name from Comment as tb1 " +
+                    query = "select tb1.post_id, tb1.content, tb1.date, tb2.name, tb2.image_path from Comment as tb1 " +
                         "INNER JOIN User as tb2 " +
                         "on tb1.user_id = tb2.user_id " +
-                        "where tb1.post_id = ?";
+                        "where tb1.post_id = ? order by comment_id";
 
                     value = [post_id];
 
