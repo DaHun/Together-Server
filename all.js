@@ -241,7 +241,7 @@ router.get('/sns/load/my', function(req, res, next) {
 });
 
 // SNS 삭제
-router.get('/sns/delete/my', function(req, res, next) {
+router.get('/sns/delete/', function(req, res, next) {
 
     var post_id = req.query.post_id;
 
